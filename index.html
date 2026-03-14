@@ -269,13 +269,6 @@
       margin-bottom: 1.2rem;
     }
 
-    .body-text {
-      font-size: 0.8rem;
-      line-height: 1.9;
-      color: rgba(238,238,255,0.55);
-      max-width: 560px;
-    }
-
     .rule {
       width: 100%; height: 1px;
       background: linear-gradient(to right, transparent, rgba(0,212,255,0.3), transparent);
@@ -329,11 +322,57 @@
     /* ══════════════════════════════════════
        CREW
     ══════════════════════════════════════ */
+
+    /* ── Featured animated character ── */
+    .char-hero {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 3.5rem 0;
+      margin-top: 2.5rem;
+      overflow: hidden;
+    }
+
+    /* grid backdrop */
+    .char-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* radial fade at edges */
+    .char-hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 35%, var(--bg0) 80%);
+      pointer-events: none;
+    }
+
+    #char-sprite {
+      width: 288px; height: 288px;
+      image-rendering: pixelated;
+      position: relative; z-index: 1;
+      filter:
+        drop-shadow(0 0 24px var(--cyan))
+        drop-shadow(0 0 60px rgba(0,212,255,0.35));
+      animation: char-levitate 3.5s ease-in-out infinite;
+    }
+
+    @keyframes char-levitate {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+
+    /* cards row */
     .crew-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
-      margin-top: 2.5rem;
+      margin-top: 2rem;
     }
 
     .card {
@@ -341,9 +380,10 @@
       border: 1px solid rgba(0,212,255,0.12);
       padding: 1.8rem;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* corner accent */
     .card::before { content: ''; position: absolute; top: 0; left: 0; width: 36px; height: 1px; background: var(--cyan); }
     .card::after  { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 36px; background: var(--cyan); }
 
@@ -355,18 +395,40 @@
       filter: drop-shadow(0 4px 16px rgba(0,212,255,0.25));
     }
 
-    /* animated character */
-    .char-stage {
+    /* ── Floating individual traveler ── */
+    .traveler-stage {
+      flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 1.5rem 0 0.5rem;
+      padding: 1.5rem 0;
     }
 
-    #char-sprite {
-      width: 128px; height: 128px;
+    .traveler-single {
+      width: 100%;
+      max-width: 180px;
       image-rendering: pixelated;
-      filter: drop-shadow(0 0 12px var(--cyan));
+      animation:
+        traveler-float 3.2s ease-in-out infinite,
+        traveler-glow  5s   ease-in-out infinite;
+    }
+
+    @keyframes traveler-float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-16px); }
+    }
+
+    @keyframes traveler-glow {
+      0%, 100% {
+        filter:
+          drop-shadow(0 0 10px var(--cyan))
+          drop-shadow(0 14px 8px rgba(0,212,255,0.18));
+      }
+      50% {
+        filter:
+          drop-shadow(0 0 18px var(--magenta))
+          drop-shadow(0 20px 10px rgba(255,0,110,0.22));
+      }
     }
 
     /* ══════════════════════════════════════
@@ -529,6 +591,7 @@
     ══════════════════════════════════════ */
     @media (max-width: 700px) {
       .crew-grid { grid-template-columns: 1fr; }
+      #char-sprite { width: 200px; height: 200px; }
       .fleet-row { gap: 1.5rem; }
       .ship-stage, .ship-stage img { width: 96px; height: 96px; }
       footer { justify-content: center; text-align: center; }
@@ -580,7 +643,11 @@
   <div class="section-inner">
     <div class="label">Characters</div>
     <h2 class="title">The Crew</h2>
-    <p class="body-text">Space travelers navigating a hostile cosmos. Original pixel art forged in 2021 — now destined for Unreal Engine 5.</p>
+
+    <!-- Featured sprite — full-width centerpiece -->
+    <div class="char-hero">
+      <img id="char-sprite" src="assets/chars/char-0.png" alt="Character Sprite">
+    </div>
 
     <div class="crew-grid">
       <div class="card">
@@ -591,12 +658,10 @@
       </div>
 
       <div class="card">
-        <div class="label">Animated Sprite</div>
-        <div class="char-stage">
-          <img id="char-sprite" src="assets/chars/char-0.png" alt="Character Sprite">
+        <div class="label">Space Traveler</div>
+        <div class="traveler-stage">
+          <img class="traveler-single" src="assets/space-traveler.png" alt="Space Traveler">
         </div>
-        <div class="label" style="margin-top:1.5rem;">Individual Traveler</div>
-        <img class="card-img" src="assets/space-traveler.png" alt="Space Traveler">
       </div>
     </div>
   </div>
@@ -609,7 +674,6 @@
   <div class="section-inner">
     <div class="label">Ships</div>
     <h2 class="title">The Fleet</h2>
-    <p class="body-text">Multi-variant player ships with real-time shadow compositing. Three animation frames, three color variants — plus the enemy complement.</p>
 
     <!-- Player ships -->
     <div class="fleet-row" id="player-fleet">
@@ -673,7 +737,6 @@
   <div class="section-inner">
     <div class="label">Archive</div>
     <h2 class="title">Artifacts</h2>
-    <p class="body-text">UI assets and world art from the Space Rage prototype — the foundation of the UE5 rebuild.</p>
 
     <div class="artifact-grid">
       <div class="artifact">
