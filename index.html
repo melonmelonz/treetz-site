@@ -373,49 +373,52 @@
        CREW
     ══════════════════════════════════════ */
 
-    /* ── Featured animated character ── */
+    /* ── Featured animated character — full bleed ── */
     .char-hero {
       position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 3.5rem 0;
-      margin-top: 2.5rem;
+      width: 100%;
+      background: var(--bg0);
       overflow: hidden;
     }
 
-    /* grid backdrop */
-    .char-hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
-      background-size: 28px 28px;
-    }
-
-    /* radial fade at edges */
+    .char-hero::before,
     .char-hero::after {
       content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at center, transparent 35%, var(--bg0) 80%);
+      position: absolute; left: 0; right: 0;
+      height: 22%;
       pointer-events: none;
+      z-index: 2;
+    }
+
+    .char-hero::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--bg0), transparent);
+    }
+
+    .char-hero::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg0), transparent);
     }
 
     #char-sprite {
-      width: 288px; height: 288px;
+      width: 100%;
+      height: auto;
+      max-height: 80vh;
+      object-fit: contain;
       image-rendering: pixelated;
-      position: relative; z-index: 1;
+      display: block;
       filter:
-        drop-shadow(0 0 24px var(--cyan))
-        drop-shadow(0 0 60px rgba(0,212,255,0.35));
-      animation: char-levitate 3.5s ease-in-out infinite;
+        drop-shadow(0 0 40px var(--cyan))
+        drop-shadow(0 0 80px rgba(0,212,255,0.3));
     }
 
-    @keyframes char-levitate {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-10px); }
+    .char-caption {
+      position: absolute;
+      bottom: 2.5rem; left: 2.5rem;
+      z-index: 3;
     }
+
+    .char-caption .title { text-shadow: 0 0 40px rgba(0,212,255,0.6); }
 
     /* cards row */
     .crew-grid {
@@ -641,7 +644,6 @@
     ══════════════════════════════════════ */
     @media (max-width: 700px) {
       .crew-grid { grid-template-columns: 1fr; }
-      #char-sprite { width: 200px; height: 200px; }
       .fleet-row { gap: 1.5rem; }
       .ship-stage, .ship-stage img { width: 96px; height: 96px; }
       footer { justify-content: center; text-align: center; }
@@ -689,16 +691,16 @@
     </div>
   </section>
 
-  <!-- ══ CREW ══ -->
-  <div class="section-inner">
-    <div class="label">Characters</div>
-    <h2 class="title">The Crew</h2>
-
-    <!-- Featured sprite — full-width centerpiece -->
-    <div class="char-hero">
-      <img id="char-sprite" src="assets/chars/char-0.png" alt="Character Sprite">
+  <!-- ══ CREW — full-bleed animated character first ══ -->
+  <div class="char-hero">
+    <img id="char-sprite" src="assets/chars/char-0.png" alt="Character Sprite">
+    <div class="char-caption">
+      <div class="label">Characters</div>
+      <div class="title">The Crew</div>
     </div>
+  </div>
 
+  <div class="section-inner" style="padding-top:3rem;">
     <div class="crew-grid">
       <div class="card">
         <div class="label">Concept Art</div>
