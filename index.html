@@ -320,6 +320,56 @@
     .tr-caption .title { color: var(--white); text-shadow: 0 0 40px rgba(0,212,255,0.6); }
 
     /* ══════════════════════════════════════
+       CREW BANNER — full bleed travelers
+    ══════════════════════════════════════ */
+    #crew-banner { position: relative; overflow: hidden; background: var(--bg0); }
+
+    .cb-frame {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg0);
+      min-height: 40vh;
+    }
+
+    .cb-frame img {
+      width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      image-rendering: pixelated;
+      display: block;
+    }
+
+    .cb-frame::before,
+    .cb-frame::after {
+      content: '';
+      position: absolute; left: 0; right: 0;
+      height: 28%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .cb-frame::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--bg0), transparent);
+    }
+
+    .cb-frame::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg0), transparent);
+    }
+
+    .cb-caption {
+      position: absolute;
+      bottom: 2.5rem; left: 2.5rem;
+      z-index: 3;
+    }
+
+    .cb-caption .title { text-shadow: 0 0 40px rgba(0,212,255,0.5); }
+
+    /* ══════════════════════════════════════
        CREW
     ══════════════════════════════════════ */
 
@@ -653,8 +703,6 @@
       <div class="card">
         <div class="label">Concept Art</div>
         <img class="card-img" src="assets/space-traveler-concept.png" alt="Space Traveler Concept">
-        <div style="height:1rem"></div>
-        <img class="card-img" src="assets/space-travelers.png" alt="Space Travelers Roster">
       </div>
 
       <div class="card">
@@ -665,6 +713,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Full-bleed crew roster -->
+  <section id="crew-banner">
+    <div class="cb-frame">
+      <img src="assets/space-travelers.png" alt="Space Travelers Roster" loading="lazy">
+      <div class="cb-caption">
+        <div class="label">Roster</div>
+        <div class="title">Space Travelers</div>
+      </div>
+    </div>
+  </section>
 
   <div class="section-inner" style="padding-top:0; padding-bottom:0;">
     <div class="rule"></div>
