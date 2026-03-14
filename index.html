@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TREETZ — Space Rage UE5</title>
+  <link rel="icon" href="assets/logo.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+    /* ── VARS ── */
+    :root {
+      --bg0: #010108;
+      --bg1: #05050f;
+      --bg2: #0a0a1e;
+      --cyan: #00d4ff;
+      --cyan-dim: rgba(0,212,255,0.15);
+      --magenta: #ff006e;
+      --orange: #ff6b1a;
+      --yellow: #ffd600;
+      --white: #eeeeff;
+      --gray: #383860;
+      --font: 'Space Mono', 'Courier New', monospace;
+    }
+
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg0);
+      color: var(--white);
+      font-family: var(--font);
+      overflow-x: hidden;
+    }
+
+    img { display: block; }
+
+    /* ── SCANLINES ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0, transparent 3px,
+        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 9000;
+    }
+
+    /* ── CRT VIGNETTE ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center,
+        transparent 45%,
+        rgba(0,0,0,0.65) 100%
+      );
+      pointer-events: none;
+      z-index: 8999;
+    }
+
+    /* ── STARFIELD ── */
+    #starfield {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ── MAIN WRAP ── */
+    main { position: relative; z-index: 1; }
+
+    /* ══════════════════════════════════════
+       HERO
+    ══════════════════════════════════════ */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Asteroid parallax layer */
+    #asteroid-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .ast {
+      position: absolute;
+      image-rendering: pixelated;
+      will-change: transform;
+    }
+
+    /* Logo */
+    .logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      z-index: 10;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    #logo {
+      width: 96px; height: 96px;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 18px var(--cyan)) drop-shadow(0 0 40px rgba(0,212,255,0.4));
+      animation: logo-pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes logo-pulse {
+      0%,100% { filter: drop-shadow(0 0 18px var(--cyan)) drop-shadow(0 0 40px rgba(0,212,255,0.4)); }
+      50%      { filter: drop-shadow(0 0 28px var(--magenta)) drop-shadow(0 0 55px rgba(255,0,110,0.35)); }
+    }
+
+    /* Glitch title */
+    .hero-title {
+      font-size: clamp(2.8rem, 9vw, 7.5rem);
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      line-height: 0.85;
+      user-select: none;
+    }
+
+    .glitch {
+      position: relative;
+      display: inline-block;
+      color: var(--white);
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      font-size: inherit;
+      font-weight: inherit;
+      letter-spacing: inherit;
+    }
+
+    .glitch::before {
+      left: 3px;
+      color: var(--magenta);
+      animation: glitch-a 2.5s infinite steps(1);
+      clip-path: polygon(0 15%, 100% 15%, 100% 35%, 0 35%);
+    }
+
+    .glitch::after {
+      left: -3px;
+      color: var(--cyan);
+      animation: glitch-b 3.2s infinite steps(1);
+      clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+    }
+
+    @keyframes glitch-a {
+      0%,82%,100% { transform: none; opacity: 0; }
+      83% { transform: translate(-4px, 1px) skewX(-2deg); opacity: 1; }
+      86% { transform: translate(4px, -2px) skewX(3deg); opacity: 1; }
+      89% { transform: translate(-2px, 1px); opacity: 1; }
+      91% { opacity: 0; }
+    }
+
+    @keyframes glitch-b {
+      0%,70%,100% { transform: none; opacity: 0; }
+      71% { transform: translate(4px, -1px) skewX(2deg); opacity: 1; }
+      74% { transform: translate(-4px, 2px) skewX(-3deg); opacity: 1; }
+      77% { transform: translate(2px, -1px); opacity: 1; }
+      80% { opacity: 0; }
+    }
+
+    .hero-sub {
+      font-size: clamp(0.55rem, 1.3vw, 0.75rem);
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      opacity: 0.85;
+    }
+
+    .ue5-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      border: 1px solid var(--cyan);
+      padding: 0.45rem 1.2rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-top: 0.75rem;
+      position: relative;
+      overflow: hidden;
+      cursor: default;
+      transition: color 0.25s;
+    }
+
+    .ue5-badge::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--cyan);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+      z-index: -1;
+    }
+
+    .ue5-badge:hover { color: var(--bg0); }
+    .ue5-badge:hover::before { transform: scaleX(1); }
+
+    .ue5-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: dot-blink 1.2s step-end infinite;
+    }
+
+    .ue5-badge:hover .ue5-dot { background: var(--bg0); }
+
+    @keyframes dot-blink {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .scroll-cue {
+      position: absolute;
+      bottom: 2rem; left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.55rem;
+      letter-spacing: 0.5em;
+      color: var(--gray);
+      text-transform: uppercase;
+      animation: fade-blink 2.4s step-end infinite;
+    }
+
+    @keyframes fade-blink {
+      0%,100% { opacity: 0.6; }
+      50% { opacity: 0; }
+    }
+
+    /* ══════════════════════════════════════
+       SECTION GLOBALS
+    ══════════════════════════════════════ */
+    .section-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .label {
+      font-size: 0.58rem;
+      letter-spacing: 0.55em;
+      text-transform: uppercase;
+      color: var(--magenta);
+      margin-bottom: 0.6rem;
+    }
+
+    .title {
+      font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 0.95;
+      margin-bottom: 1.2rem;
+    }
+
+    .body-text {
+      font-size: 0.8rem;
+      line-height: 1.9;
+      color: rgba(238,238,255,0.55);
+      max-width: 560px;
+    }
+
+    .rule {
+      width: 100%; height: 1px;
+      background: linear-gradient(to right, transparent, rgba(0,212,255,0.3), transparent);
+    }
+
+    /* ══════════════════════════════════════
+       TREASURE ROOM — full bleed GIF
+    ══════════════════════════════════════ */
+    #treasure-room { position: relative; overflow: hidden; }
+
+    .tr-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: var(--bg0);
+    }
+
+    .tr-frame img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    /* top/bottom fade */
+    .tr-frame::before,
+    .tr-frame::after {
+      content: '';
+      position: absolute; left: 0; right: 0;
+      height: 22%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .tr-frame::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--bg0), transparent);
+    }
+
+    .tr-frame::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg0), transparent);
+    }
+
+    .tr-caption {
+      position: absolute;
+      bottom: 2.5rem; left: 2.5rem;
+      z-index: 3;
+    }
+
+    .tr-caption .title { color: var(--white); text-shadow: 0 0 40px rgba(0,212,255,0.6); }
+
+    /* ══════════════════════════════════════
+       CREW
+    ══════════════════════════════════════ */
+    .crew-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .card {
+      background: rgba(0,212,255,0.03);
+      border: 1px solid rgba(0,212,255,0.12);
+      padding: 1.8rem;
+      position: relative;
+    }
+
+    /* corner accent */
+    .card::before { content: ''; position: absolute; top: 0; left: 0; width: 36px; height: 1px; background: var(--cyan); }
+    .card::after  { content: ''; position: absolute; top: 0; left: 0; width: 1px; height: 36px; background: var(--cyan); }
+
+    .card .label { margin-bottom: 1rem; }
+
+    .card-img {
+      width: 100%;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 4px 16px rgba(0,212,255,0.25));
+    }
+
+    /* animated character */
+    .char-stage {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem 0 0.5rem;
+    }
+
+    #char-sprite {
+      width: 128px; height: 128px;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 12px var(--cyan));
+    }
+
+    /* ══════════════════════════════════════
+       FLEET
+    ══════════════════════════════════════ */
+    .fleet-row {
+      display: flex;
+      gap: 2.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+    }
+
+    .ship-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .ship-stage {
+      position: relative;
+      width: 128px; height: 128px;
+    }
+
+    .ship-stage img {
+      position: absolute; top: 0; left: 0;
+      width: 128px; height: 128px;
+      image-rendering: pixelated;
+    }
+
+    .ship-spr { z-index: 2; }
+    .ship-shd {
+      z-index: 1;
+      opacity: 0.45;
+      transform: translateY(10px) scaleX(0.9);
+      filter: blur(3px);
+    }
+
+    .ship-lbl {
+      font-size: 0.55rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gray);
+    }
+
+    /* divider between player / enemy */
+    .fleet-divider {
+      width: 100%; height: 1px;
+      background: rgba(255,0,110,0.15);
+      margin: 3rem 0;
+    }
+
+    .fleet-divider-label {
+      text-align: center;
+      font-size: 0.55rem;
+      letter-spacing: 0.5em;
+      color: var(--magenta);
+      text-transform: uppercase;
+      margin: -0.6rem 0 2rem;
+    }
+
+    /* Spritesheet kit */
+    .ship-kit {
+      margin-top: 3.5rem;
+      text-align: center;
+    }
+
+    .ship-kit img {
+      max-width: 100%;
+      image-rendering: pixelated;
+      border: 1px solid rgba(0,212,255,0.08);
+      filter: drop-shadow(0 0 24px rgba(0,212,255,0.15));
+    }
+
+    /* ══════════════════════════════════════
+       ARTIFACTS
+    ══════════════════════════════════════ */
+    .artifact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .artifact {
+      background: rgba(255,0,110,0.03);
+      border: 1px solid rgba(255,0,110,0.12);
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .artifact::before { content: ''; position: absolute; top: 0; right: 0; width: 36px; height: 1px; background: var(--magenta); }
+    .artifact::after  { content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 36px; background: var(--magenta); }
+
+    .artifact h3 {
+      font-size: 0.58rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--magenta);
+      margin-bottom: 1.25rem;
+    }
+
+    .artifact img {
+      width: 100%;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 8px rgba(255,0,110,0.2));
+    }
+
+    /* background art full-width card */
+    .bg-art {
+      grid-column: 1 / -1;
+      background: rgba(255,107,26,0.03);
+      border-color: rgba(255,107,26,0.15);
+    }
+
+    .bg-art::before { background: var(--orange); }
+    .bg-art::after  { background: var(--orange); }
+    .bg-art h3 { color: var(--orange); }
+
+    .bg-art img {
+      filter: drop-shadow(0 0 24px rgba(255,107,26,0.18));
+      border: 1px solid rgba(255,107,26,0.08);
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════ */
+    footer {
+      border-top: 1px solid rgba(0,212,255,0.08);
+      padding: 2.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.35em;
+      color: var(--gray);
+      text-transform: uppercase;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    footer .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    footer img {
+      width: 28px; height: 28px;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 6px var(--cyan));
+      opacity: 0.7;
+    }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 700px) {
+      .crew-grid { grid-template-columns: 1fr; }
+      .fleet-row { gap: 1.5rem; }
+      .ship-stage, .ship-stage img { width: 96px; height: 96px; }
+      footer { justify-content: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── STARFIELD ── -->
+<canvas id="starfield"></canvas>
+
+<main>
+
+  <!-- ══ HERO ══ -->
+  <section id="hero">
+    <div id="asteroid-layer"></div>
+
+    <div class="logo-wrap">
+      <img id="logo" src="assets/logo.png" alt="Treetz">
+
+      <div class="hero-title">
+        <span class="glitch" data-text="TREETZ">TREETZ</span>
+      </div>
+
+      <div class="hero-sub">Space Rage &mdash; Unreal Engine 5 Remake</div>
+
+      <div class="ue5-badge">
+        <span class="ue5-dot"></span>
+        In Development
+        <span class="ue5-dot"></span>
+      </div>
+    </div>
+
+    <div class="scroll-cue">[ scroll ]</div>
+  </section>
+
+  <!-- ══ TREASURE ROOM ══ -->
+  <section id="treasure-room">
+    <div class="tr-frame">
+      <img src="assets/treasure-room.gif" alt="Treasure Room" loading="lazy" decoding="async">
+      <div class="tr-caption">
+        <div class="label">World</div>
+        <div class="title">The Treasure Room</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CREW ══ -->
+  <div class="section-inner">
+    <div class="label">Characters</div>
+    <h2 class="title">The Crew</h2>
+    <p class="body-text">Space travelers navigating a hostile cosmos. Original pixel art forged in 2021 — now destined for Unreal Engine 5.</p>
+
+    <div class="crew-grid">
+      <div class="card">
+        <div class="label">Concept Art</div>
+        <img class="card-img" src="assets/space-traveler-concept.png" alt="Space Traveler Concept">
+        <div style="height:1rem"></div>
+        <img class="card-img" src="assets/space-travelers.png" alt="Space Travelers Roster">
+      </div>
+
+      <div class="card">
+        <div class="label">Animated Sprite</div>
+        <div class="char-stage">
+          <img id="char-sprite" src="assets/chars/char-0.png" alt="Character Sprite">
+        </div>
+        <div class="label" style="margin-top:1.5rem;">Individual Traveler</div>
+        <img class="card-img" src="assets/space-traveler.png" alt="Space Traveler">
+      </div>
+    </div>
+  </div>
+
+  <div class="section-inner" style="padding-top:0; padding-bottom:0;">
+    <div class="rule"></div>
+  </div>
+
+  <!-- ══ FLEET ══ -->
+  <div class="section-inner">
+    <div class="label">Ships</div>
+    <h2 class="title">The Fleet</h2>
+    <p class="body-text">Multi-variant player ships with real-time shadow compositing. Three animation frames, three color variants — plus the enemy complement.</p>
+
+    <!-- Player ships -->
+    <div class="fleet-row" id="player-fleet">
+      <div class="ship-unit">
+        <div class="ship-stage">
+          <img class="ship-shd" id="shd-blue" src="assets/ships/shadow-1.png" alt="">
+          <img class="ship-spr" id="spr-blue" src="assets/ships/blue-1.png" alt="Blue Ship">
+        </div>
+        <div class="ship-lbl">Blue</div>
+      </div>
+      <div class="ship-unit">
+        <div class="ship-stage">
+          <img class="ship-shd" id="shd-red" src="assets/ships/shadow-1.png" alt="">
+          <img class="ship-spr" id="spr-red" src="assets/ships/red-1.png" alt="Red Ship">
+        </div>
+        <div class="ship-lbl">Red</div>
+      </div>
+      <div class="ship-unit">
+        <div class="ship-stage">
+          <img class="ship-shd" src="assets/ships/shadow-1.png" alt="">
+          <img class="ship-spr" src="assets/ships/green-1.png" alt="Green Ship">
+        </div>
+        <div class="ship-lbl">Green</div>
+      </div>
+    </div>
+
+    <!-- Enemy divider -->
+    <div class="fleet-divider"></div>
+    <div class="fleet-divider-label">Enemy Contact</div>
+
+    <!-- Enemy ships -->
+    <div class="fleet-row">
+      <div class="ship-unit">
+        <div class="ship-stage">
+          <img class="ship-shd" id="shd-e1b" src="assets/ships/enemy1-shadow-1.png" alt="">
+          <img class="ship-spr" id="spr-e1b" src="assets/ships/enemy1-blue-1.png" alt="Enemy Blue">
+        </div>
+        <div class="ship-lbl">Enemy I — Blue</div>
+      </div>
+      <div class="ship-unit">
+        <div class="ship-stage">
+          <img class="ship-shd" id="shd-e1r" src="assets/ships/enemy1-shadow-1.png" alt="">
+          <img class="ship-spr" id="spr-e1r" src="assets/ships/enemy1-red-1.png" alt="Enemy Red">
+        </div>
+        <div class="ship-lbl">Enemy I — Red</div>
+      </div>
+    </div>
+
+    <!-- Spritesheet overview -->
+    <div class="ship-kit">
+      <div class="label" style="margin-bottom:1rem; text-align:center;">Spaceship Kit Overview</div>
+      <img src="assets/spaceship-kit.png" alt="Spaceship Kit Spritesheet" style="max-width:576px;">
+    </div>
+  </div>
+
+  <div class="section-inner" style="padding-top:0; padding-bottom:0;">
+    <div class="rule"></div>
+  </div>
+
+  <!-- ══ ARTIFACTS ══ -->
+  <div class="section-inner">
+    <div class="label">Archive</div>
+    <h2 class="title">Artifacts</h2>
+    <p class="body-text">UI assets and world art from the Space Rage prototype — the foundation of the UE5 rebuild.</p>
+
+    <div class="artifact-grid">
+      <div class="artifact">
+        <h3>Gamepad Prompts</h3>
+        <img src="assets/gamepad-prompts.png" alt="Gamepad Prompts Sprite Sheet">
+      </div>
+      <div class="artifact">
+        <h3>Splash Screen</h3>
+        <img src="assets/woostar.png" alt="Woostar Splashscreen">
+      </div>
+      <div class="artifact">
+        <h3>Treasure Room — Scene</h3>
+        <img src="assets/scene.png" alt="Treasure Room Scene">
+      </div>
+      <div class="artifact bg-art">
+        <h3>World — Background Art</h3>
+        <img src="assets/background.png" alt="Space Rage Background">
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-logo">
+    <img src="assets/logo.png" alt="Treetz">
+    <span>Treetz Studio</span>
+  </div>
+  <span>Space Rage &mdash; UE5</span>
+  <span>&copy; 2024 All Rights Reserved</span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════
+   STARFIELD CANVAS
+══════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function seed(n) {
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.4 + 0.15,
+        speed: Math.random() * 0.25 + 0.04,
+        alpha: Math.random() * 0.6 + 0.3,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+    const t = performance.now() * 0.001;
+    for (const s of stars) {
+      const a = s.alpha * (0.65 + 0.35 * Math.sin(s.phase + t * (s.speed * 3)));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(190,210,255,${a.toFixed(2)})`;
+      ctx.fill();
+      s.y += s.speed;
+      if (s.y > H) { s.y = -2; s.x = Math.random() * W; }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  resize();
+  seed(220);
+  tick();
+  window.addEventListener('resize', () => { resize(); seed(220); });
+})();
+
+/* ══════════════════════════════════════
+   ASTEROID PARALLAX
+══════════════════════════════════════ */
+(function () {
+  const layer = document.getElementById('asteroid-layer');
+  const imgs  = ['assets/asteroids/01.png','assets/asteroids/02.png','assets/asteroids/03.png','assets/asteroids/04.png'];
+  const pool  = [];
+
+  function spawn() {
+    const el = document.createElement('img');
+    const size = 20 + Math.random() * 64;
+    const y    = Math.random() * 90;         // % viewport
+    const dur  = 18 + Math.random() * 32;    // seconds
+    const rot  = Math.random() > 0.5 ? 1 : -1;
+    const rot0 = Math.random() * 360;
+
+    el.src = imgs[Math.floor(Math.random() * imgs.length)];
+    el.style.cssText = `
+      width:${size}px; height:auto; opacity:${(0.15 + Math.random() * 0.45).toFixed(2)};
+      image-rendering:pixelated; top:${y}vh; left:-${size + 40}px;
+      will-change:transform;
+    `;
+
+    const pxSpeed = 0.06 + (size / 84) * 0.12; // parallax multiplier
+    pool.push({ el, pxSpeed, baseY: y });
+
+    // horizontal drift via animation API
+    el.animate([
+      { transform: `translate(0, 0) rotate(${rot0}deg)` },
+      { transform: `translate(${window.innerWidth + size + 100}px, ${(Math.random() - 0.5) * 80}px) rotate(${rot0 + rot * 300}deg)` }
+    ], { duration: dur * 1000, delay: -Math.random() * dur * 1000, iterations: Infinity, easing: 'linear' });
+
+    layer.appendChild(el);
+  }
+
+  for (let i = 0; i < 10; i++) spawn();
+
+  // Scroll parallax
+  let lastSY = 0;
+  window.addEventListener('scroll', () => {
+    const sy = window.scrollY;
+    pool.forEach(({ el, pxSpeed, baseY }) => {
+      el.style.marginTop = `${-sy * pxSpeed}px`;
+    });
+    lastSY = sy;
+  }, { passive: true });
+})();
+
+/* ══════════════════════════════════════
+   SHIP SPRITE ANIMATION
+══════════════════════════════════════ */
+(function () {
+  const blue   = ['assets/ships/blue-1.png','assets/ships/blue-2.png','assets/ships/blue-3.png'];
+  const red    = ['assets/ships/red-1.png','assets/ships/red-2.png','assets/ships/red-3.png'];
+  const shd    = ['assets/ships/shadow-1.png','assets/ships/shadow-2.png','assets/ships/shadow-3.png'];
+  const e1b    = ['assets/ships/enemy1-blue-1.png','assets/ships/enemy1-blue-2.png','assets/ships/enemy1-blue-3.png'];
+  const e1r    = ['assets/ships/enemy1-red-1.png','assets/ships/enemy1-red-2.png','assets/ships/enemy1-red-3.png'];
+  const e1shd  = ['assets/ships/enemy1-shadow-1.png','assets/ships/enemy1-shadow-2.png','assets/ships/enemy1-shadow-3.png'];
+
+  // Preload frames
+  [...blue,...red,...shd,...e1b,...e1r,...e1shd].forEach(src => { const i = new Image(); i.src = src; });
+
+  const sprBlue = document.getElementById('spr-blue');
+  const shdBlue = document.getElementById('shd-blue');
+  const sprRed  = document.getElementById('spr-red');
+  const shdRed  = document.getElementById('shd-red');
+  const sprE1b  = document.getElementById('spr-e1b');
+  const shdE1b  = document.getElementById('shd-e1b');
+  const sprE1r  = document.getElementById('spr-e1r');
+  const shdE1r  = document.getElementById('shd-e1r');
+
+  let f = 0;
+  setInterval(() => {
+    f = (f + 1) % 3;
+    if (sprBlue) sprBlue.src = blue[f];
+    if (shdBlue) shdBlue.src = shd[f];
+    if (sprRed)  sprRed.src  = red[f];
+    if (shdRed)  shdRed.src  = shd[f];
+    if (sprE1b)  sprE1b.src  = e1b[f];
+    if (shdE1b)  shdE1b.src  = e1shd[f];
+    if (sprE1r)  sprE1r.src  = e1r[f];
+    if (shdE1r)  shdE1r.src  = e1shd[f];
+  }, 160); // ~6fps idle
+})();
+
+/* ══════════════════════════════════════
+   CHARACTER ANIMATION
+══════════════════════════════════════ */
+(function () {
+  const frames = Array.from({ length: 8 }, (_, i) => `assets/chars/char-${i}.png`);
+  frames.forEach(src => { const img = new Image(); img.src = src; });
+
+  const el = document.getElementById('char-sprite');
+  if (!el) return;
+
+  let f = 0;
+  setInterval(() => {
+    f = (f + 1) % 8;
+    el.src = frames[f];
+  }, 85); // ~12fps
+})();
+</script>
+
+</body>
+</html>
