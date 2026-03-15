@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>treetz — Unreal Engine 5</title>
+  <title>treetz — loot the galaxy</title>
   <link rel="icon" href="assets/logo.png">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
@@ -32,6 +32,12 @@
       color: var(--white);
       font-family: var(--font);
       overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Hide cursor on all elements for non-touch */
+    @media (hover: hover) {
+      * { cursor: none !important; }
     }
 
     img { display: block; }
@@ -148,14 +154,14 @@
     .glitch::before {
       left: 3px;
       color: var(--magenta);
-      animation: glitch-a 2.5s infinite steps(1);
+      animation: glitch-a 5s infinite steps(1);
       clip-path: polygon(0 15%, 100% 15%, 100% 35%, 0 35%);
     }
 
     .glitch::after {
       left: -3px;
       color: var(--cyan);
-      animation: glitch-b 3.2s infinite steps(1);
+      animation: glitch-b 6.4s infinite steps(1);
       clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
     }
 
@@ -217,7 +223,7 @@
       width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--cyan);
-      animation: dot-blink 1.2s step-end infinite;
+      animation: dot-blink 2.5s step-end infinite;
     }
 
     .ue5-badge:hover .ue5-dot { background: var(--bg0); }
@@ -235,7 +241,7 @@
       letter-spacing: 0.5em;
       color: var(--gray);
       text-transform: uppercase;
-      animation: fade-blink 2.4s step-end infinite;
+      animation: fade-blink 4.5s step-end infinite;
     }
 
     @keyframes fade-blink {
@@ -461,8 +467,8 @@
       max-width: 180px;
       image-rendering: pixelated;
       animation:
-        traveler-float 3.2s ease-in-out infinite,
-        traveler-glow  5s   ease-in-out infinite;
+        traveler-float 6s ease-in-out infinite,
+        traveler-glow  9s ease-in-out infinite;
     }
 
     @keyframes traveler-float {
@@ -639,6 +645,172 @@
     }
 
     /* ══════════════════════════════════════
+       NOISE GRAIN
+    ══════════════════════════════════════ */
+    #noise {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 8998;
+      opacity: 0.032;
+      mix-blend-mode: screen;
+      image-rendering: pixelated;
+    }
+
+    /* ══════════════════════════════════════
+       DATA TICKER
+    ══════════════════════════════════════ */
+    #ticker {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 22px;
+      background: rgba(0,0,8,0.85);
+      border-top: 1px solid rgba(0,212,255,0.08);
+      overflow: hidden;
+      z-index: 8990;
+      display: flex;
+      align-items: center;
+    }
+
+    #ticker-inner {
+      white-space: nowrap;
+      font-size: 0.48rem;
+      letter-spacing: 0.2em;
+      color: rgba(0,212,255,0.35);
+      animation: ticker-scroll 70s linear infinite;
+      padding-left: 100vw;
+    }
+
+    @keyframes ticker-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-100%); }
+    }
+
+    /* ══════════════════════════════════════
+       HUD CORNERS (hero)
+    ══════════════════════════════════════ */
+    .hud-corners {
+      position: absolute; inset: 1.5rem;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .hud-corners span {
+      position: absolute;
+      width: 18px; height: 18px;
+      opacity: 0.4;
+    }
+
+    .hud-tl { top: 0; left: 0;
+      border-top: 1px solid var(--cyan); border-left: 1px solid var(--cyan); }
+    .hud-tr { top: 0; right: 0;
+      border-top: 1px solid var(--cyan); border-right: 1px solid var(--cyan); }
+    .hud-bl { bottom: 0; left: 0;
+      border-bottom: 1px solid var(--cyan); border-left: 1px solid var(--cyan); }
+    .hud-br { bottom: 0; right: 0;
+      border-bottom: 1px solid var(--cyan); border-right: 1px solid var(--cyan); }
+
+    .hud-coords {
+      position: absolute;
+      bottom: 3.5rem; right: 1.5rem;
+      font-size: 0.48rem;
+      letter-spacing: 0.25em;
+      color: rgba(0,212,255,0.3);
+      text-transform: uppercase;
+      line-height: 1.8;
+      z-index: 10;
+    }
+
+    /* ══════════════════════════════════════
+       LIGHTBOX
+    ══════════════════════════════════════ */
+    #lightbox {
+      position: fixed; inset: 0;
+      background: rgba(0,0,8,0.94);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s;
+      cursor: zoom-out;
+    }
+
+    #lightbox.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #lightbox img {
+      max-width: 92vw;
+      max-height: 88vh;
+      image-rendering: pixelated;
+      border: 1px solid rgba(0,212,255,0.18);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.8),
+        0 0 60px rgba(0,212,255,0.15),
+        -3px 0 0 rgba(255,0,110,0.3),
+         3px 0 0 rgba(0,212,255,0.3);
+    }
+
+    #lightbox .lb-close {
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      color: rgba(0,212,255,0.5);
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    [data-zoom] {
+      cursor: zoom-in;
+      transition: filter 0.15s, transform 0.15s;
+    }
+
+    [data-zoom]:hover {
+      filter: brightness(1.08) drop-shadow(0 0 10px rgba(0,212,255,0.3));
+      transform: scale(1.01);
+    }
+
+    /* ══════════════════════════════════════
+       IMAGE HOVER GLITCH
+    ══════════════════════════════════════ */
+    @keyframes img-glitch {
+      0%   { filter: none; transform: none; }
+      25%  { filter: hue-rotate(80deg) saturate(1.8); transform: translate(3px, -1px) skewX(-1deg); }
+      50%  { filter: hue-rotate(-80deg) saturate(1.8); transform: translate(-3px, 1px) skewX(1deg); }
+      75%  { filter: hue-rotate(160deg); transform: translate(2px, 2px); }
+      100% { filter: none; transform: none; }
+    }
+
+    .glitch-hit { animation: img-glitch 0.45s steps(1); }
+
+    /* ══════════════════════════════════════
+       LOGO CHROMATIC ABERRATION
+    ══════════════════════════════════════ */
+    @keyframes logo-chroma {
+      0%,100% {
+        filter: drop-shadow(0 0 18px var(--cyan)) drop-shadow(0 0 40px rgba(0,212,255,0.4));
+      }
+      50% {
+        filter:
+          drop-shadow(-3px 0 var(--magenta))
+          drop-shadow(3px 0 var(--cyan))
+          drop-shadow(0 0 28px rgba(255,0,110,0.4));
+      }
+      75% {
+        filter:
+          drop-shadow(2px 0 var(--orange))
+          drop-shadow(-2px 0 var(--cyan))
+          drop-shadow(0 0 20px rgba(255,107,26,0.3));
+      }
+    }
+
+    #logo { animation: logo-chroma 9s ease-in-out infinite; }
+
+    /* ══════════════════════════════════════
        RESPONSIVE
     ══════════════════════════════════════ */
     @media (max-width: 700px) {
@@ -651,14 +823,40 @@
 </head>
 <body>
 
+<!-- ── NOISE GRAIN ── -->
+<canvas id="noise"></canvas>
+
 <!-- ── STARFIELD ── -->
 <canvas id="starfield"></canvas>
+
+<!-- ── DATA TICKER ── -->
+<div id="ticker">
+  <div id="ticker-inner">
+    TREETZ.PAGES.DEV &nbsp;// SYS:ONLINE &nbsp;// SECTOR_07 &nbsp;// UNITS:99 &nbsp;// PWR:████░░░ &nbsp;// VER:0.1.0-UE5 &nbsp;// GRID:4B2A:FF09 &nbsp;// SIGNAL:STRONG &nbsp;// UPTIME:∞ &nbsp;// COORDS:24.5°N:119.8°E &nbsp;// FOUNDED:2018 &nbsp;// STATUS:IN_DEV &nbsp;// ENGINE:UNREAL_5 &nbsp;// TREETZ.PAGES.DEV &nbsp;// SYS:ONLINE &nbsp;// SECTOR_07 &nbsp;// UNITS:99 &nbsp;// PWR:████░░░ &nbsp;//
+  </div>
+</div>
+
+<!-- ── LIGHTBOX ── -->
+<div id="lightbox">
+  <img id="lb-img" src="" alt="Zoomed view">
+  <div class="lb-close">[ esc / click to close ]</div>
+</div>
 
 <main>
 
   <!-- ══ HERO ══ -->
   <section id="hero">
     <div id="asteroid-layer"></div>
+
+    <div class="hud-corners">
+      <span class="hud-tl"></span>
+      <span class="hud-tr"></span>
+      <span class="hud-bl"></span>
+      <span class="hud-br"></span>
+    </div>
+    <div class="hud-coords" id="hud-coords">
+      LAT: 00.000°N<br>LON: 00.000°E<br>SYS: ONLINE
+    </div>
 
     <div class="logo-wrap">
       <img id="logo" src="assets/logo.png" alt="Treetz">
@@ -667,7 +865,7 @@
         <span class="glitch" data-text="treetz">treetz</span>
       </div>
 
-      <div class="hero-sub">Unreal Engine 5</div>
+      <div class="hero-sub">loot the galaxy</div>
 
       <div class="ue5-badge">
         <span class="ue5-dot"></span>
@@ -688,22 +886,6 @@
     </div>
   </div>
 
-  <div class="section-inner" style="padding-top:3rem;">
-    <div class="crew-grid">
-      <div class="card">
-        <div class="label">Concept Art</div>
-        <img class="card-img" src="assets/space-traveler-concept.png" alt="Space Traveler Concept">
-      </div>
-
-      <div class="card">
-        <div class="label">Space Traveler</div>
-        <div class="traveler-stage">
-          <img class="traveler-single" src="assets/space-traveler.png" alt="Space Traveler">
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ══ TREASURE ROOM ══ -->
   <section id="treasure-room">
     <div class="tr-frame">
@@ -714,6 +896,22 @@
       </div>
     </div>
   </section>
+
+  <div class="section-inner" style="padding-top:3rem;">
+    <div class="crew-grid">
+      <div class="card">
+        <div class="label">Concept Art</div>
+        <img class="card-img" data-zoom src="assets/space-traveler-concept.png" alt="Space Traveler Concept">
+      </div>
+
+      <div class="card">
+        <div class="label">Space Traveler</div>
+        <div class="traveler-stage">
+          <img class="traveler-single" src="assets/space-traveler.png" alt="Space Traveler">
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Full-bleed crew roster -->
   <section id="crew-banner">
@@ -785,7 +983,7 @@
     <!-- Spritesheet overview -->
     <div class="ship-kit">
       <div class="label" style="margin-bottom:1rem; text-align:center;">Spaceship Kit Overview</div>
-      <img src="assets/spaceship-kit.png" alt="Spaceship Kit Spritesheet" style="max-width:576px;">
+      <img data-zoom src="assets/spaceship-kit.png" alt="Spaceship Kit Spritesheet" style="max-width:576px;">
     </div>
   </div>
 
@@ -801,19 +999,19 @@
     <div class="artifact-grid">
       <div class="artifact">
         <h3>Gamepad Prompts</h3>
-        <img src="assets/gamepad-prompts.png" alt="Gamepad Prompts Sprite Sheet">
+        <img data-zoom src="assets/gamepad-prompts.png" alt="Gamepad Prompts Sprite Sheet">
       </div>
       <div class="artifact">
         <h3>Splash Screen</h3>
-        <img src="assets/woostar.png" alt="Woostar Splashscreen">
+        <img data-zoom src="assets/woostar.png" alt="Woostar Splashscreen">
       </div>
       <div class="artifact">
         <h3>Treasure Room — Scene</h3>
-        <img src="assets/scene.png" alt="Treasure Room Scene">
+        <img data-zoom src="assets/scene.png" alt="Treasure Room Scene">
       </div>
       <div class="artifact bg-art">
         <h3>World — Background Art</h3>
-        <img src="assets/background.png" alt="Background Art">
+        <img data-zoom src="assets/background.png" alt="Background Art">
       </div>
     </div>
   </div>
@@ -962,7 +1160,7 @@
     if (shdE1b)  shdE1b.src  = e1shd[f];
     if (sprE1r)  sprE1r.src  = e1r[f];
     if (shdE1r)  shdE1r.src  = e1shd[f];
-  }, 160); // ~6fps idle
+  }, 240); // ~4fps idle
 })();
 
 /* ══════════════════════════════════════
@@ -979,7 +1177,237 @@
   setInterval(() => {
     f = (f + 1) % 8;
     el.src = frames[f];
-  }, 85); // ~12fps
+  }, 130); // ~8fps
+})();
+
+/* ══════════════════════════════════════
+   NOISE GRAIN CANVAS
+══════════════════════════════════════ */
+(function () {
+  const c = document.getElementById('noise');
+  const ctx = c.getContext('2d');
+  const W = 256, H = 192;
+  c.width = W; c.height = H;
+  const buf = ctx.createImageData(W, H);
+  let last = 0;
+  function tick(t) {
+    if (t - last > 66) { // ~15fps
+      const d = buf.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255 | 0;
+        d[i] = d[i+1] = d[i+2] = v;
+        d[i+3] = 255;
+      }
+      ctx.putImageData(buf, 0, 0);
+      last = t;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* ══════════════════════════════════════
+   SCREEN FLICKER
+══════════════════════════════════════ */
+(function () {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;inset:0;background:#000;pointer-events:none;z-index:9700;opacity:0;transition:opacity 0.04s;';
+  document.body.appendChild(el);
+  function flicker() {
+    el.style.opacity = (0.55 + Math.random() * 0.25).toFixed(2);
+    setTimeout(() => { el.style.opacity = '0'; }, 50 + Math.random() * 80);
+    setTimeout(flicker, 12000 + Math.random() * 28000);
+  }
+  setTimeout(flicker, 9000 + Math.random() * 9000);
+})();
+
+/* ══════════════════════════════════════
+   VHS TRACKING LINES
+══════════════════════════════════════ */
+(function () {
+  const c = document.createElement('canvas');
+  c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9600;opacity:0;width:100%;height:100%;';
+  document.body.appendChild(c);
+  const ctx = c.getContext('2d');
+  function show() {
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    ctx.clearRect(0, 0, c.width, c.height);
+    const n = 2 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++) {
+      const y = Math.random() * c.height;
+      const h = 1 + Math.random() * 6;
+      const r = Math.random();
+      ctx.fillStyle = r > 0.5
+        ? `rgba(0,212,255,${0.2 + Math.random() * 0.3})`
+        : `rgba(255,0,110,${0.15 + Math.random() * 0.25})`;
+      ctx.fillRect(0, y, c.width, h);
+      // horizontal shift artifact on one block
+      if (Math.random() > 0.5) {
+        const shiftW = 60 + Math.random() * 200;
+        const shiftX = Math.random() * (c.width - shiftW);
+        ctx.fillStyle = `rgba(255,255,255,0.06)`;
+        ctx.fillRect(shiftX, y - 1, shiftW, h + 2);
+      }
+    }
+    c.style.opacity = '1';
+    setTimeout(() => { c.style.opacity = '0'; }, 80 + Math.random() * 120);
+    setTimeout(show, 14000 + Math.random() * 32000);
+  }
+  setTimeout(show, 8000 + Math.random() * 8000);
+})();
+
+/* ══════════════════════════════════════
+   HUD COORDINATES READOUT
+══════════════════════════════════════ */
+(function () {
+  const el = document.getElementById('hud-coords');
+  if (!el) return;
+  function rnd(min, max, dec) { return (Math.random() * (max - min) + min).toFixed(dec); }
+  function update() {
+    el.innerHTML = `LAT: ${rnd(0,90,3)}°N<br>LON: ${rnd(0,180,3)}°E<br>SYS: ONLINE`;
+  }
+  setInterval(update, 2800);
+})();
+
+/* ══════════════════════════════════════
+   IMAGE HOVER GLITCH
+══════════════════════════════════════ */
+(function () {
+  document.querySelectorAll('.card-img, .artifact img, .ship-kit img').forEach(img => {
+    img.addEventListener('mouseenter', () => {
+      img.classList.remove('glitch-hit');
+      void img.offsetWidth; // reflow to restart animation
+      img.classList.add('glitch-hit');
+    });
+    img.addEventListener('animationend', () => img.classList.remove('glitch-hit'));
+  });
+})();
+
+/* ══════════════════════════════════════
+   SPACESHIP CURSOR + CLICK TO FIRE
+══════════════════════════════════════ */
+(function () {
+  // Only on pointer devices
+  if (!window.matchMedia('(hover: hover)').matches) return;
+
+  // Cursor ship element
+  const ship = document.createElement('div');
+  ship.style.cssText = [
+    'position:fixed',
+    'width:40px',
+    'height:40px',
+    'pointer-events:none',
+    'z-index:999999',
+    'left:-200px',
+    'top:-200px',
+    'transform:translate(-50%,-50%)',
+    'image-rendering:pixelated',
+    'transition:filter 0.08s',
+  ].join(';');
+
+  const shipImg = document.createElement('img');
+  shipImg.src = 'assets/fx/cursor-ship.png';
+  shipImg.style.cssText = 'width:100%;height:100%;image-rendering:pixelated;display:block;';
+  ship.appendChild(shipImg);
+  document.body.appendChild(ship);
+
+  // Bullet canvas (full-screen, behind cursor)
+  const bc = document.createElement('canvas');
+  bc.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:999998;';
+  document.body.appendChild(bc);
+  const bctx = bc.getContext('2d');
+
+  function resizeBC() { bc.width = window.innerWidth; bc.height = window.innerHeight; }
+  resizeBC();
+  window.addEventListener('resize', resizeBC);
+
+  // Preload bullet sprite
+  const bulletSpr = new Image();
+  bulletSpr.src = 'assets/fx/laser.png';
+
+  const bullets = [];
+
+  // Track mouse
+  let mx = -200, my = -200;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    ship.style.left = mx + 'px';
+    ship.style.top  = my + 'px';
+  });
+
+  // Fire on click
+  document.addEventListener('click', e => {
+    const spread = [-4, 4];
+    spread.forEach((offset, i) => {
+      bullets.push({
+        x: e.clientX + offset,
+        y: e.clientY - 20,
+        vy: -16 - Math.random() * 5,
+        vx: offset * 0.15,
+        alpha: 1,
+        w: 7, h: 19,
+        delay: i * 30,
+      });
+    });
+    // Muzzle flash
+    ship.style.filter = 'brightness(3) drop-shadow(0 0 10px #00d4ff) drop-shadow(0 0 20px #ff006e)';
+    setTimeout(() => { ship.style.filter = ''; }, 90);
+  });
+
+  // Render loop
+  function drawBullets() {
+    bctx.clearRect(0, 0, bc.width, bc.height);
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      if (b.delay > 0) { b.delay -= 16; continue; }
+      b.x += b.vx;
+      b.y += b.vy;
+      b.alpha -= 0.022;
+      if (b.alpha <= 0 || b.y < -60) { bullets.splice(i, 1); continue; }
+      bctx.save();
+      bctx.globalAlpha = b.alpha;
+      bctx.shadowColor = '#00d4ff';
+      bctx.shadowBlur = 10;
+      if (bulletSpr.complete && bulletSpr.naturalWidth) {
+        bctx.imageSmoothingEnabled = false;
+        bctx.drawImage(bulletSpr, b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+      } else {
+        // Fallback: cyan laser line
+        bctx.fillStyle = '#00d4ff';
+        bctx.fillRect(b.x - 2, b.y - 10, 4, 20);
+      }
+      bctx.restore();
+    }
+    requestAnimationFrame(drawBullets);
+  }
+  requestAnimationFrame(drawBullets);
+})();
+
+/* ══════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════ */
+(function () {
+  const lb   = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  if (!lb || !lbImg) return;
+
+  function open(src) {
+    lbImg.src = src;
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => { lbImg.src = ''; }, 200);
+  }
+
+  document.querySelectorAll('[data-zoom]').forEach(img => {
+    img.addEventListener('click', () => open(img.src));
+  });
+
+  lb.addEventListener('click', close);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 </script>
 
