@@ -808,6 +808,56 @@
     }
 
     /* ══════════════════════════════════════
+       GAME CALLOUT (hero)
+    ══════════════════════════════════════ */
+    .game-callout {
+      margin-top: 1.4rem;
+      border: 1px solid rgba(0,212,255,0.2);
+      padding: 0.7rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      position: relative;
+      background: rgba(0,212,255,0.03);
+    }
+
+    .game-callout::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 24px; height: 1px; background: var(--cyan);
+    }
+    .game-callout::after {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 1px; height: 24px; background: var(--cyan);
+    }
+
+    .game-callout-label {
+      font-size: 0.48rem;
+      letter-spacing: 0.55em;
+      text-transform: uppercase;
+      color: var(--magenta);
+    }
+
+    .game-callout-keys {
+      font-size: 0.52rem;
+      letter-spacing: 0.15em;
+      color: rgba(0,212,255,0.6);
+      white-space: nowrap;
+    }
+
+    .key {
+      display: inline-block;
+      border: 1px solid rgba(0,212,255,0.4);
+      padding: 0.1em 0.4em;
+      font-size: 0.52rem;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      background: rgba(0,212,255,0.06);
+    }
+
+    /* ══════════════════════════════════════
        GAME OVERLAY
     ══════════════════════════════════════ */
     #game-overlay {
@@ -892,6 +942,16 @@
         In Development
         <span class="ue5-dot"></span>
       </div>
+
+      <div class="game-callout">
+        <div class="game-callout-label">Mini Game</div>
+        <div class="game-callout-keys">
+          <span class="key">G</span> enter &nbsp;·&nbsp;
+          <span class="key">WASD</span> move &nbsp;·&nbsp;
+          <span class="key">SPACE</span> fire &nbsp;·&nbsp;
+          <span class="key">ESC</span> exit
+        </div>
+      </div>
     </div>
 
     <div class="scroll-cue">[ scroll ]</div>
@@ -901,18 +961,18 @@
   <div class="char-hero">
     <img id="char-sprite" src="assets/chars/char-0.png" alt="Character Sprite">
     <div class="char-caption">
-      <div class="label">Characters</div>
-      <div class="title">The Crew</div>
+      <div class="label">World</div>
+      <div class="title">The Treasure Room</div>
     </div>
   </div>
 
   <!-- ══ TREASURE ROOM ══ -->
-  <section id="treasure-room">
+  <section id="treasure-room" style="margin-top: 4rem;">
     <div class="tr-frame">
       <img src="assets/treasure-room.gif" alt="Treasure Room" loading="lazy" decoding="async">
       <div class="tr-caption">
-        <div class="label">World</div>
-        <div class="title">The Treasure Room</div>
+        <div class="label">Characters</div>
+        <div class="title">The Crew</div>
       </div>
     </div>
   </section>
@@ -1399,67 +1459,94 @@
 
 /* ══════════════════════════════════════
    SPACE SHOOTER MINI-GAME  [ G ]
+   v2 — bosses · mines · explosions · enemy variants
 ══════════════════════════════════════ */
 (function () {
-  // ── Constants ──────────────────────────────────────────────────
-  const SW = 48;                        // sprite rendered size px
-  const BLW = 7, BLH = 19;             // laser bullet px
-  const PLW = 10, PLH = 31;            // plasma bullet px
-  const PLAYER_SPD   = 5;
-  const FIRE_CD      = 260;            // ms between player shots
-  const INV_FRAMES   = 90;             // invincibility after hit
-  const MAX_LIVES    = 3;
-  const WAVE_STEP    = 800;            // score per wave
-  const STAR_COUNT   = 130;
-  const E_SHOOT_MIN  = 100;
-  const E_SHOOT_MAX  = 200;
+  // ── CONFIG ─────────────────────────────────────────────────────
+  const SW        = 48;           // standard sprite px
+  const BSW       = 96;           // boss sprite px
+  const BLW = 7,  BLH = 19;      // player laser
+  const PLW = 8,  PLH = 24;      // enemy plasma
+  const P_SPD     = 5.5;
+  const FIRE_CD   = 230;          // ms between player shots
+  const INV_F     = 90;           // invincibility frames
+  const MAX_LIVES = 3;
+  const EXP_F     = 9;            // explosion animation frames
+  const EXP_SPD   = 3;            // game frames per exp frame
+  const BOSS_EVERY = 3;           // boss every N waves
 
-  // ── DOM refs ───────────────────────────────────────────────────
-  const overlay     = document.getElementById('game-overlay');
-  const canvas      = document.getElementById('game-canvas');
-  const ctx         = canvas.getContext('2d');
-  const cursorShip  = document.getElementById('cursor-ship');
-  const cursorBulls = document.getElementById('cursor-bullets');
+  // ── DOM ────────────────────────────────────────────────────────
+  const overlay    = document.getElementById('game-overlay');
+  const canvas     = document.getElementById('game-canvas');
+  const ctx        = canvas.getContext('2d');
+  const cursorShip = document.getElementById('cursor-ship');
+  const cursorBull = document.getElementById('cursor-bullets');
 
-  // ── Sprite preload ─────────────────────────────────────────────
-  const G = {};   // image map
-  function img(key, src) { const i = new Image(); i.src = src; G[key] = i; }
+  // ── SPRITE MAP ─────────────────────────────────────────────────
+  const G = {};
+  function img(k, src) { const i = new Image(); i.src = src; G[k] = i; }
 
+  // Player
   for (let n = 1; n <= 3; n++) {
     img(`p${n}`,  `assets/ships/blue-${n}.png`);
     img(`ps${n}`, `assets/ships/shadow-${n}.png`);
-    img(`e${n}`,  `assets/ships/enemy1-red-${n}.png`);
-    img(`es${n}`, `assets/ships/enemy1-shadow-${n}.png`);
   }
+  // Enemy type 1 — fast fighters, 4 colours
+  for (const c of ['red','teal','green','blue']) {
+    for (let n = 1; n <= 3; n++) img(`e1${c}${n}`, `assets/ships/enemy1-${c}-${n}.png`);
+  }
+  for (let n = 1; n <= 3; n++) img(`e1shd${n}`, `assets/ships/enemy1-shadow-${n}.png`);
+
+  // Enemy type 2 — heavy bombers, 4 colours
+  for (const c of ['red','teal','green','blue']) {
+    for (let n = 1; n <= 3; n++) img(`e2${c}${n}`, `assets/ships/enemy2-${c}-${n}.png`);
+  }
+  for (let n = 1; n <= 3; n++) img(`e2shd${n}`, `assets/ships/enemy2-shadow-${n}.png`);
+
+  // Mines
+  img('mine1', 'assets/fx/mine1.png');
+  img('mine2', 'assets/fx/mine2.png');
+  img('mineR', 'assets/fx/mine-rotor.png');
+
+  // Bullets
   img('laser',  'assets/fx/laser.png');
   img('plasma', 'assets/fx/plasma.png');
 
-  // ── State ──────────────────────────────────────────────────────
-  let W, H;
-  let active = false;
-  let phase  = 'playing';   // 'playing' | 'gameover'
+  // Explosions (9 frames × 2 types)
+  for (let n = 1; n <= 9; n++) {
+    img(`x1${n}`, `assets/fx/explosions/exp1-0${n}.png`);
+    img(`x2${n}`, `assets/fx/explosions/exp2-0${n}.png`);
+  }
 
+  // Exhaust (6 frames)
+  for (let n = 1; n <= 6; n++) img(`ex${n}`, `assets/fx/exhaust-0${n}.png`);
+
+  // Boss
+  img('bossMnt', 'assets/fx/boss-mount.png');
+  img('bossGun', 'assets/fx/boss-gun.png');
+
+  // ── STATE ──────────────────────────────────────────────────────
+  let W, H, active = false, phase = 'playing';
   let score, wave, lives, invTimer, tick, lastFire;
   let px, py;
-  let pBullets, eBullets, enemies, stars;
-  let sprF = 0, sprT = 0;   // sprite animation
+  let exhF = 0, exhT = 0;
+  let pBullets, eBullets, enemies, mines, explosions, stars;
+  let sprF = 0, sprT = 0;
   let spawnHandle = null;
-
+  let boss = null;
   const keys = {};
 
-  // ── Canvas resize ──────────────────────────────────────────────
   function resize() {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
   }
 
-  // ── Open / close ───────────────────────────────────────────────
+  // ── OPEN / CLOSE ───────────────────────────────────────────────
   function openGame() {
-    active = true;
-    resize();
+    active = true; resize();
     overlay.style.display = 'block';
-    if (cursorShip)  cursorShip.style.display  = 'none';
-    if (cursorBulls) cursorBulls.style.display = 'none';
+    if (cursorShip) cursorShip.style.display = 'none';
+    if (cursorBull) cursorBull.style.display = 'none';
     startRound();
     requestAnimationFrame(loop);
   }
@@ -1468,30 +1555,29 @@
     active = false;
     overlay.style.display = 'none';
     clearTimeout(spawnHandle);
-    if (cursorShip)  cursorShip.style.display  = '';
-    if (cursorBulls) cursorBulls.style.display = '';
+    if (cursorShip) cursorShip.style.display = '';
+    if (cursorBull) cursorBull.style.display = '';
   }
 
-  // ── Start / restart ────────────────────────────────────────────
+  // ── START ──────────────────────────────────────────────────────
   function startRound() {
     score = 0; wave = 1; lives = MAX_LIVES;
     invTimer = 0; tick = 0; lastFire = 0;
-    sprF = 0; sprT = 0;
+    sprF = 0; sprT = 0; exhF = 0; exhT = 0;
     phase = 'playing';
-    px = W / 2; py = H - 110;
+    px = W / 2; py = H - 120;
     pBullets = []; eBullets = []; enemies = [];
-    seedStars();
-    scheduleSpawn();
+    mines = []; explosions = []; boss = null;
+    seedStars(); scheduleSpawn();
   }
 
-  // ── Stars ──────────────────────────────────────────────────────
+  // ── STARS ──────────────────────────────────────────────────────
   function seedStars() {
-    stars = Array.from({ length: STAR_COUNT }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
+    stars = Array.from({ length: 150 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
       r: Math.random() * 1.4 + 0.3,
-      spd: 0.8 + Math.random() * 2.5,
-      a:   0.15 + Math.random() * 0.55,
+      spd: 0.8 + Math.random() * 3.2,
+      a: 0.1 + Math.random() * 0.6,
     }));
   }
 
@@ -1504,38 +1590,130 @@
 
   function drawStars() {
     for (const s of stars) {
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(190,210,255,${s.a.toFixed(2)})`;
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(190,210,255,${s.a.toFixed(2)})`; ctx.fill();
     }
   }
 
-  // ── Enemy spawning ─────────────────────────────────────────────
+  // ── SPAWNING ───────────────────────────────────────────────────
+  function isBossWave() { return wave % BOSS_EVERY === 0; }
+
   function scheduleSpawn() {
-    if (!active || phase !== 'playing') return;
-    const delay = Math.max(500, 2600 - wave * 180) + Math.random() * 700;
+    if (!active || phase !== 'playing' || boss) return;
+    const delay = Math.max(380, 2000 - wave * 130) + Math.random() * 450;
     spawnHandle = setTimeout(() => {
-      if (active && phase === 'playing') { spawnEnemy(); scheduleSpawn(); }
+      if (active && phase === 'playing' && !boss) { doSpawn(); scheduleSpawn(); }
     }, delay);
   }
 
-  function spawnEnemy() {
-    const maxOnScreen = Math.min(4, 1 + Math.floor(wave / 2));
-    if (enemies.length >= maxOnScreen) return;
+  function doSpawn() {
+    if (isBossWave() && !boss && enemies.length === 0 && mines.length === 0) {
+      spawnBoss(); return;
+    }
+    const maxOn = Math.min(7, 2 + Math.floor(wave / 2));
+    if (enemies.length + mines.length >= maxOn) return;
+    const roll = Math.random();
+    if      (roll < 0.1 + wave * 0.025) spawnMine();
+    else if (roll < 0.38 && wave >= 2)  spawnBomber();
+    else                                 spawnFighter();
+  }
+
+  const E1C = ['red','teal','green','blue'];
+  const E2C = ['red','teal','green','blue'];
+
+  function spawnFighter() {
+    const c = E1C[Math.floor(Math.random() * E1C.length)];
     enemies.push({
-      x:        40 + Math.random() * (W - 80),
-      y:        -SW,
-      spd:      1.0 + wave * 0.28 + Math.random() * 0.6,
-      amp:      28 + Math.random() * 55,
-      freq:     0.018 + Math.random() * 0.022,
-      off:      Math.random() * Math.PI * 2,
-      shootCd:  E_SHOOT_MIN + Math.floor(Math.random() * (E_SHOOT_MAX - E_SHOOT_MIN)),
-      alive:    true,
+      type: 'fighter', color: c,
+      x: 44 + Math.random() * (W - 88), y: -SW,
+      spd: 1.3 + wave * 0.28 + Math.random() * 0.7,
+      amp: 32 + Math.random() * 55, freq: 0.018 + Math.random() * 0.02,
+      off: Math.random() * Math.PI * 2,
+      hp: 1,
+      shootCd: 70 + Math.floor(Math.random() * 90),
+      alive: true,
     });
   }
 
-  // ── Fire helpers ───────────────────────────────────────────────
+  function spawnBomber() {
+    const c = E2C[Math.floor(Math.random() * E2C.length)];
+    enemies.push({
+      type: 'bomber', color: c,
+      x: 44 + Math.random() * (W - 88), y: -SW,
+      spd: 0.65 + wave * 0.16 + Math.random() * 0.4,
+      amp: 14 + Math.random() * 28, freq: 0.011 + Math.random() * 0.01,
+      off: Math.random() * Math.PI * 2,
+      hp: 3,
+      shootCd: 55 + Math.floor(Math.random() * 55),
+      alive: true,
+    });
+  }
+
+  function spawnMine() {
+    mines.push({
+      x: 60 + Math.random() * (W - 120), y: -SW,
+      vx: (Math.random() - 0.5) * 1.4,
+      vy: 0.55 + Math.random() * 0.75 + wave * 0.1,
+      rot: 0, rotSpd: (Math.random() - 0.5) * 0.07,
+      kind: Math.random() > 0.5 ? 1 : 2,
+      alive: true,
+    });
+  }
+
+  // ── BOSS ───────────────────────────────────────────────────────
+  function spawnBoss() {
+    clearTimeout(spawnHandle);
+    boss = {
+      x: W / 2, y: -BSW,
+      targetY: H * 0.2,
+      hp: 10 + wave * 4, maxHp: 10 + wave * 4,
+      vx: 1.5 + wave * 0.14,
+      pattern: 0, patternTimer: 200,
+      shootCd: 55,
+      angle: 0,
+    };
+  }
+
+  function updateBoss() {
+    if (!boss) return;
+    if (boss.y < boss.targetY) { boss.y += 2.5; return; }
+    boss.x += boss.vx;
+    if (boss.x > W - BSW / 2 || boss.x < BSW / 2) boss.vx *= -1;
+    boss.angle = Math.atan2(py - boss.y, px - boss.x) - Math.PI / 2;
+    boss.patternTimer--;
+    if (boss.patternTimer <= 0) {
+      boss.pattern = (boss.pattern + 1) % 3;
+      boss.patternTimer = 220 + Math.floor(Math.random() * 100);
+    }
+    boss.shootCd--;
+    if (boss.shootCd <= 0) {
+      if      (boss.pattern === 0) { bossAimed3(); boss.shootCd = 32; }
+      else if (boss.pattern === 1) { bossBurst();  boss.shootCd = 110; }
+      else                         { bossAimed1(); boss.shootCd = 16; }
+    }
+  }
+
+  function shoot(x, y, tx, ty, spd, big) {
+    const dx = tx - x, dy = ty - y, d = Math.hypot(dx, dy) || 1;
+    eBullets.push({ x, y, vx: (dx / d) * spd, vy: (dy / d) * spd, alive: true, big });
+  }
+
+  function bossAimed1() { shoot(boss.x, boss.y + BSW / 3, px, py, 5 + wave * 0.28, false); }
+
+  function bossAimed3() {
+    const ang = Math.atan2(py - boss.y, px - boss.x);
+    const spd = 4.5 + wave * 0.22;
+    for (const d of [-0.24, 0, 0.24])
+      eBullets.push({ x: boss.x, y: boss.y + BSW / 3, vx: Math.cos(ang + d) * spd, vy: Math.sin(ang + d) * spd, alive: true, big: true });
+  }
+
+  function bossBurst() {
+    const spd = 4.8;
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 6)
+      eBullets.push({ x: boss.x, y: boss.y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, alive: true, big: false });
+  }
+
+  // ── PLAYER FIRE ────────────────────────────────────────────────
   function playerFire(now) {
     if (now - lastFire < FIRE_CD) return;
     lastFire = now;
@@ -1544,169 +1722,209 @@
   }
 
   function enemyFire(e) {
-    const dx = px - e.x, dy = py - e.y;
-    const d  = Math.hypot(dx, dy) || 1;
-    const spd = 3.5 + wave * 0.3;
-    eBullets.push({ x: e.x, y: e.y + SW / 2, vx: (dx / d) * spd, vy: (dy / d) * spd, alive: true });
+    const dx = px - e.x, dy = py - e.y, d = Math.hypot(dx, dy) || 1;
+    const spd = 3.8 + wave * 0.22;
+    if (e.type === 'bomber') {
+      const ang = Math.atan2(dy, dx);
+      for (const s of [-0.22, 0, 0.22])
+        eBullets.push({ x: e.x, y: e.y + SW / 2, vx: Math.cos(ang + s) * spd, vy: Math.sin(ang + s) * spd, alive: true, big: false });
+    } else {
+      eBullets.push({ x: e.x, y: e.y + SW / 2, vx: (dx / d) * spd, vy: (dy / d) * spd, alive: true, big: false });
+    }
   }
 
-  // ── Collision ──────────────────────────────────────────────────
-  function hits(ax, ay, ahw, ahh, bx, by, bhw, bhh) {
+  // ── EXPLOSIONS ─────────────────────────────────────────────────
+  function spawnExplosion(x, y, big) {
+    explosions.push({ x, y, f: 0, t: 0, big, done: false });
+  }
+
+  function tickExplosions() {
+    for (const ex of explosions) {
+      if (ex.done) continue;
+      if (++ex.t >= EXP_SPD) { ex.t = 0; ex.f++; }
+      if (ex.f >= EXP_F) ex.done = true;
+    }
+    explosions = explosions.filter(ex => !ex.done);
+  }
+
+  function drawExplosions() {
+    ctx.imageSmoothingEnabled = false;
+    for (const ex of explosions) {
+      const k = (ex.big ? 'x2' : 'x1') + (ex.f + 1);
+      const im = G[k]; const sz = ex.big ? 96 : 64;
+      if (im && im.complete) ctx.drawImage(im, ex.x - sz / 2, ex.y - sz / 2, sz, sz);
+    }
+  }
+
+  // ── EXHAUST ────────────────────────────────────────────────────
+  function tickExhaust() { if (++exhT >= 4) { exhT = 0; exhF = (exhF + 1) % 6; } }
+  function drawExhaust() {
+    const im = G[`ex${exhF + 1}`];
+    if (!im || !im.complete) return;
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.72;
+    ctx.drawImage(im, px - 11, py + SW / 2 - 8, 22, 28);
+    ctx.restore();
+  }
+
+  // ── COLLISION ──────────────────────────────────────────────────
+  function aabb(ax, ay, ahw, ahh, bx, by, bhw, bhh) {
     return Math.abs(ax - bx) < ahw + bhw && Math.abs(ay - by) < ahh + bhh;
   }
 
   function doCollisions() {
-    const pbHW = 4, pbHH = BLH / 2;
-    const eHW  = SW * 0.38, eHH = SW * 0.38;
+    const pbHW = 3, pbHH = BLH / 2;
+    const eHW  = SW * 0.35, eHH = SW * 0.35;
+    const plHW = SW * 0.2,  plHH = SW * 0.2;
 
-    // Player bullets → enemies
+    // Player bullets vs enemies
     for (const b of pBullets) {
       if (!b.alive) continue;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (hits(b.x, b.y, pbHW, pbHH, e.x, e.y, eHW, eHH)) {
-          b.alive = false; e.alive = false;
-          score += 100;
-          wave = 1 + Math.floor(score / WAVE_STEP);
+        if (aabb(b.x, b.y, pbHW, pbHH, e.x, e.y, eHW, eHH)) {
+          b.alive = false; e.hp--;
+          if (e.hp <= 0) {
+            e.alive = false;
+            spawnExplosion(e.x, e.y, false);
+            score += e.type === 'bomber' ? 200 : 100;
+            wave = 1 + Math.floor(score / 900);
+          }
+          break;
+        }
+      }
+      // vs boss
+      if (!b.alive || !boss) continue;
+      if (aabb(b.x, b.y, pbHW, pbHH, boss.x, boss.y, BSW * 0.38, BSW * 0.38)) {
+        b.alive = false; boss.hp--;
+        if (boss.hp <= 0) {
+          spawnExplosion(boss.x,      boss.y,      true);
+          spawnExplosion(boss.x - 35, boss.y - 20, false);
+          spawnExplosion(boss.x + 35, boss.y + 15, false);
+          score += 1000 + wave * 100; wave++;
+          boss = null; scheduleSpawn();
+        }
+      }
+    }
+
+    // Player bullets vs mines
+    for (const b of pBullets) {
+      if (!b.alive) continue;
+      for (const m of mines) {
+        if (!m.alive) continue;
+        if (aabb(b.x, b.y, pbHW, pbHH, m.x, m.y, SW * 0.3, SW * 0.3)) {
+          b.alive = false; m.alive = false;
+          spawnExplosion(m.x, m.y, false); score += 50;
         }
       }
     }
 
     if (invTimer > 0) return;
 
-    // Enemy bullets → player
-    const plHW = SW * 0.22, plHH = SW * 0.22;
-    const ebHW = PLW / 2, ebHH = PLH / 2;
+    // Enemy bullets vs player
     for (const b of eBullets) {
       if (!b.alive) continue;
-      if (hits(b.x, b.y, ebHW, ebHH, px, py, plHW, plHH)) {
-        b.alive = false;
-        loseLife();
+      if (aabb(b.x, b.y, b.big ? 6 : 4, PLH / 2, px, py, plHW, plHH)) {
+        b.alive = false; loseLife();
       }
     }
-
-    // Enemy body → player
-    const ecHW = SW * 0.42, ecHH = SW * 0.42;
+    // Enemies vs player
     for (const e of enemies) {
       if (!e.alive) continue;
-      if (hits(e.x, e.y, ecHW, ecHH, px, py, plHW, plHH)) {
-        e.alive = false;
-        loseLife();
+      if (aabb(e.x, e.y, eHW, eHH, px, py, plHW, plHH)) {
+        e.alive = false; spawnExplosion(e.x, e.y, false); loseLife();
+      }
+    }
+    // Mines vs player
+    for (const m of mines) {
+      if (!m.alive) continue;
+      if (aabb(m.x, m.y, SW * 0.3, SW * 0.3, px, py, plHW, plHH)) {
+        m.alive = false; spawnExplosion(m.x, m.y, false); loseLife();
       }
     }
   }
 
   function loseLife() {
-    lives--;
-    invTimer = INV_FRAMES;
+    lives--; invTimer = INV_F;
     if (lives <= 0) { phase = 'gameover'; clearTimeout(spawnHandle); }
-  }
-
-  // ── Input ──────────────────────────────────────────────────────
-  function onDown(e) {
-    keys[e.code] = true;
-    if (!active) {
-      if (e.code === 'KeyG') openGame();
-      return;
-    }
-    if (e.code === 'Escape') { closeGame(); return; }
-    if (e.code === 'KeyR' && phase === 'gameover') { startRound(); return; }
-    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
-  }
-  function onUp(e) { delete keys[e.code]; }
-
-  document.addEventListener('keydown', onDown);
-  document.addEventListener('keyup',   onUp);
-  overlay.addEventListener('mousedown', e => { e.preventDefault(); if (active && phase === 'playing') playerFire(performance.now()); });
-
-  // ── Draw helpers ───────────────────────────────────────────────
-  function drawI(img, cx, cy, w, h) {
-    if (img && img.complete && img.naturalWidth) {
-      ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
-    }
-  }
-
-  function drawShip(prefix, cx, cy, flipY) {
-    const f = sprF + 1;
-    ctx.save();
-    ctx.imageSmoothingEnabled = false;
-    if (flipY) {
-      ctx.translate(cx, cy);
-      ctx.scale(1, -1);
-      ctx.translate(-cx, -cy);
-    }
-    // Shadow
-    ctx.globalAlpha = 0.3;
-    drawI(G[`${prefix}s${f}`], cx, cy + (flipY ? -10 : 10), SW, SW);
-    ctx.globalAlpha = 1;
-    drawI(G[`${prefix}${f}`], cx, cy, SW, SW);
-    ctx.restore();
   }
 
   // ── HUD ────────────────────────────────────────────────────────
   function drawHUD() {
     ctx.imageSmoothingEnabled = false;
-    ctx.textAlign = 'left';
-
-    // Lives (mini ship icons top-left)
+    // Lives
     for (let i = 0; i < MAX_LIVES; i++) {
-      ctx.globalAlpha = i < lives ? 1 : 0.18;
-      if (G.p1 && G.p1.complete) ctx.drawImage(G.p1, 14 + i * 26, 10, 20, 20);
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = i < lives ? 1 : 0.15;
+      if (G.p1 && G.p1.complete) ctx.drawImage(G.p1, 14 + i * 26, 12, 22, 22);
     }
-
-    // Score
-    ctx.font = 'bold 13px "Space Mono","Courier New",monospace';
-    ctx.fillStyle = 'rgba(0,212,255,0.85)';
+    ctx.globalAlpha = 1;
     ctx.textAlign = 'center';
-    ctx.fillText(`SCORE  ${String(score).padStart(6, '0')}`, W / 2, 26);
-
-    // Wave
+    ctx.font = 'bold 13px "Space Mono","Courier New",monospace';
+    ctx.fillStyle = 'rgba(0,212,255,0.9)';
+    ctx.fillText(`SCORE  ${String(score).padStart(6, '0')}`, W / 2, 28);
     ctx.font = '10px "Space Mono","Courier New",monospace';
-    ctx.fillStyle = 'rgba(0,212,255,0.35)';
-    ctx.fillText(`WAVE  ${wave}`, W / 2, H - 12);
+    ctx.fillStyle = boss ? 'rgba(255,0,110,0.7)' : 'rgba(0,212,255,0.35)';
+    ctx.fillText(boss ? `★ BOSS WAVE ${wave} ★` : `WAVE  ${wave}`, W / 2, H - 14);
 
-    // Controls reminder (first few seconds)
-    if (tick < 300) {
-      ctx.globalAlpha = Math.max(0, 1 - tick / 200);
-      ctx.fillStyle = 'rgba(0,212,255,0.5)';
+    // Hint fades out
+    if (tick < 240) {
+      ctx.globalAlpha = Math.max(0, 1 - tick / 160);
+      ctx.fillStyle = 'rgba(0,212,255,0.55)';
       ctx.font = '10px "Space Mono","Courier New",monospace';
-      ctx.fillText('WASD · MOVE    SPACE · FIRE    ESC · EXIT', W / 2, H / 2 + SW * 3);
+      ctx.fillText('WASD · MOVE     SPACE · FIRE     ESC · EXIT', W / 2, H * 0.64);
       ctx.globalAlpha = 1;
     }
+  }
+
+  // Boss health bar
+  function drawBossHUD() {
+    if (!boss) return;
+    const bw = Math.min(W * 0.55, 380), bx2 = W / 2 - bw / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(bx2, 50, bw, 8);
+    const pct = boss.hp / boss.maxHp;
+    ctx.fillStyle = pct > 0.5 ? '#ff006e' : pct > 0.25 ? '#ff6b1a' : '#ffd600';
+    ctx.fillRect(bx2, 50, bw * pct, 8);
+    ctx.strokeStyle = 'rgba(255,0,110,0.35)';
+    ctx.lineWidth = 1; ctx.strokeRect(bx2, 50, bw, 8);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,0,110,0.75)';
+    ctx.font = '10px "Space Mono","Courier New",monospace';
+    ctx.fillText(`BOSS  HP ${boss.hp} / ${boss.maxHp}`, W / 2, 44);
+  }
+
+  function drawBoss() {
+    if (!boss) return;
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    if (G.bossMnt && G.bossMnt.complete) ctx.drawImage(G.bossMnt, boss.x - BSW / 2, boss.y - BSW / 2, BSW, BSW);
+    ctx.translate(boss.x, boss.y); ctx.rotate(boss.angle);
+    if (G.bossGun && G.bossGun.complete) ctx.drawImage(G.bossGun, -BSW / 4, -BSW / 2, BSW / 2, BSW / 2);
+    ctx.restore();
   }
 
   function drawGameOver() {
-    ctx.fillStyle = 'rgba(1,1,8,0.78)';
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(1,1,8,0.84)'; ctx.fillRect(0, 0, W, H);
     ctx.textAlign = 'center';
-
     ctx.fillStyle = '#ff006e';
     ctx.font = 'bold 32px "Space Mono","Courier New",monospace';
     ctx.fillText('GAME OVER', W / 2, H / 2 - 44);
-
     ctx.fillStyle = '#eeeeff';
     ctx.font = 'bold 18px "Space Mono","Courier New",monospace';
-    ctx.fillText(`SCORE  ${String(score).padStart(6, '0')}`, W / 2, H / 2 + 2);
-
+    ctx.fillText(`SCORE  ${String(score).padStart(6, '0')}`, W / 2, H / 2 + 4);
     ctx.fillStyle = 'rgba(0,212,255,0.5)';
     ctx.font = '11px "Space Mono","Courier New",monospace';
-    ctx.fillText('[ R ] RESTART     [ ESC ] EXIT', W / 2, H / 2 + 40);
+    ctx.fillText('[ R ] RESTART     [ ESC ] EXIT', W / 2, H / 2 + 42);
   }
 
-  // ── Main loop ──────────────────────────────────────────────────
+  // ── MAIN LOOP ──────────────────────────────────────────────────
   function loop() {
     if (!active) return;
-
     ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = '#010108';
-    ctx.fillRect(0, 0, W, H);
-
+    ctx.fillStyle = '#010108'; ctx.fillRect(0, 0, W, H);
     tickStars(); drawStars();
 
     if (phase === 'playing') {
-      // Sprite frame
       if (++sprT >= 7) { sprT = 0; sprF = (sprF + 1) % 3; }
+      tickExhaust(); tickExplosions();
 
       // Player movement
       let dx = 0, dy = 0;
@@ -1715,76 +1933,145 @@
       if (keys['KeyW'] || keys['ArrowUp'])    dy -= 1;
       if (keys['KeyS'] || keys['ArrowDown'])  dy += 1;
       if (dx && dy) { dx *= 0.707; dy *= 0.707; }
-      px = Math.max(SW / 2, Math.min(W - SW / 2, px + dx * PLAYER_SPD));
-      py = Math.max(SW / 2, Math.min(H - SW / 2, py + dy * PLAYER_SPD));
+      px = Math.max(SW / 2, Math.min(W - SW / 2, px + dx * P_SPD));
+      py = Math.max(SW / 2, Math.min(H - SW / 2, py + dy * P_SPD));
       if (keys['Space']) playerFire(performance.now());
 
       // Player bullets
-      for (const b of pBullets) { if (b.alive) { b.y -= 14; if (b.y < -BLH) b.alive = false; } }
+      for (const b of pBullets) { if (b.alive) { b.y -= 15; if (b.y < -BLH) b.alive = false; } }
 
       // Enemy bullets
-      for (const b of eBullets) { if (b.alive) { b.x += b.vx; b.y += b.vy; if (b.y > H + 40 || b.x < -30 || b.x > W + 30) b.alive = false; } }
+      for (const b of eBullets) {
+        if (b.alive) {
+          b.x += b.vx; b.y += b.vy;
+          if (b.y > H + 50 || b.y < -50 || b.x < -50 || b.x > W + 50) b.alive = false;
+        }
+      }
 
       // Enemies
+      const minCd = Math.max(25, 90 - wave * 6);
       for (const e of enemies) {
         if (!e.alive) continue;
         e.y += e.spd;
-        e.x += Math.sin(tick * e.freq + e.off) * e.amp * e.freq * 2.2;
+        e.x += Math.sin(tick * e.freq + e.off) * e.amp * e.freq * 2.1;
         e.x = Math.max(SW / 2, Math.min(W - SW / 2, e.x));
         if (e.y > H + SW) { e.alive = false; continue; }
-        if (--e.shootCd <= 0) { enemyFire(e); e.shootCd = E_SHOOT_MIN + Math.floor(Math.random() * (E_SHOOT_MAX - E_SHOOT_MIN)); }
+        if (--e.shootCd <= 0) { enemyFire(e); e.shootCd = minCd + Math.floor(Math.random() * 60); }
       }
 
+      // Mines
+      for (const m of mines) {
+        if (!m.alive) continue;
+        m.x += m.vx; m.y += m.vy; m.rot += m.rotSpd;
+        if (m.y > H + SW) m.alive = false;
+      }
+
+      updateBoss();
       doCollisions();
       if (invTimer > 0) invTimer--;
 
-      // Cull dead
-      pBullets = pBullets.filter(b => b.alive);
-      eBullets = eBullets.filter(b => b.alive);
-      enemies  = enemies.filter(e => e.alive);
+      pBullets  = pBullets.filter(b => b.alive);
+      eBullets  = eBullets.filter(b => b.alive);
+      enemies   = enemies.filter(e => e.alive);
+      mines     = mines.filter(m => m.alive);
 
-      // ── Draw ──
-      // Player bullets (cyan)
-      ctx.save();
-      ctx.imageSmoothingEnabled = false;
+      // ── DRAW ──
+
+      // Player bullets (cyan glow)
+      ctx.save(); ctx.imageSmoothingEnabled = false;
       ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 10;
-      for (const b of pBullets) drawI(G.laser, b.x, b.y, BLW, BLH);
+      for (const b of pBullets) {
+        if (G.laser && G.laser.complete) ctx.drawImage(G.laser, b.x - BLW / 2, b.y - BLH / 2, BLW, BLH);
+        else { ctx.fillStyle = '#00d4ff'; ctx.fillRect(b.x - 2, b.y - 9, 4, 19); }
+      }
       ctx.shadowBlur = 0; ctx.restore();
 
-      // Enemy bullets (magenta)
-      ctx.save();
-      ctx.imageSmoothingEnabled = false;
+      // Enemy bullets (magenta/orange)
+      ctx.save(); ctx.imageSmoothingEnabled = false;
       ctx.shadowColor = '#ff006e'; ctx.shadowBlur = 10;
-      for (const b of eBullets) drawI(G.plasma, b.x, b.y, PLW, PLH);
+      for (const b of eBullets) {
+        if (b.big) {
+          ctx.fillStyle = '#ff6b1a';
+          ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI * 2); ctx.fill();
+        } else if (G.plasma && G.plasma.complete) {
+          ctx.drawImage(G.plasma, b.x - PLW / 2, b.y - PLH / 2, PLW, PLH);
+        } else {
+          ctx.fillStyle = '#ff006e'; ctx.fillRect(b.x - 2, b.y - 10, 4, 20);
+        }
+      }
       ctx.shadowBlur = 0; ctx.restore();
 
-      // Enemy ships (flipped so they face down)
-      for (const e of enemies) drawShip('e', e.x, e.y, true);
+      // Mines (spinning)
+      ctx.save(); ctx.imageSmoothingEnabled = false;
+      for (const m of mines) {
+        if (!m.alive) continue;
+        ctx.save();
+        ctx.translate(m.x, m.y); ctx.rotate(m.rot);
+        const mBase = m.kind === 1 ? G.mine1 : G.mine2;
+        if (mBase && mBase.complete) ctx.drawImage(mBase, -SW / 2, -SW / 2, SW, SW);
+        if (G.mineR && G.mineR.complete) { ctx.rotate(tick * 0.1); ctx.drawImage(G.mineR, -SW / 2, -SW / 2, SW, SW); }
+        ctx.restore();
+      }
+      ctx.restore();
 
-      // Player (blink during iframes)
-      if (invTimer === 0 || Math.floor(tick / 4) % 2 === 0) drawShip('p', px, py, false);
+      // Enemy ships (flipped to face downward)
+      ctx.save(); ctx.imageSmoothingEnabled = false;
+      for (const e of enemies) {
+        const t = e.type === 'bomber' ? 2 : 1;
+        const f = sprF + 1;
+        ctx.save();
+        ctx.translate(e.x, e.y); ctx.scale(1, -1); ctx.translate(-e.x, -e.y);
+        const shd = G[`e${t}shd${f}`];
+        if (shd && shd.complete) { ctx.globalAlpha = 0.25; ctx.drawImage(shd, e.x - SW / 2, e.y - SW / 2 + 8, SW, SW); }
+        ctx.globalAlpha = 1;
+        const spr = G[`e${t}${e.color}${f}`];
+        if (spr && spr.complete) ctx.drawImage(spr, e.x - SW / 2, e.y - SW / 2, SW, SW);
+        ctx.restore();
+      }
+      ctx.restore();
 
+      drawBoss();
+      drawExhaust();
+
+      // Player ship (blink on iframes)
+      if (invTimer === 0 || Math.floor(tick / 4) % 2 === 0) {
+        const f = sprF + 1;
+        ctx.save(); ctx.imageSmoothingEnabled = false;
+        const shd = G[`ps${f}`];
+        if (shd && shd.complete) { ctx.globalAlpha = 0.28; ctx.drawImage(shd, px - SW / 2, py - SW / 2 + 8, SW, SW); }
+        ctx.globalAlpha = 1;
+        const spr = G[`p${f}`];
+        if (spr && spr.complete) ctx.drawImage(spr, px - SW / 2, py - SW / 2, SW, SW);
+        ctx.restore();
+      }
+
+      drawExplosions();
+      drawBossHUD();
       drawHUD();
       tick++;
+
     } else {
-      // Game over — still draw world behind overlay
-      for (const e of enemies) drawShip('e', e.x, e.y, true);
-      if (invTimer === 0 || Math.floor(tick / 4) % 2 === 0) drawShip('p', px, py, false);
-      drawHUD();
-      drawGameOver();
+      drawExplosions(); drawBossHUD(); drawHUD(); drawGameOver();
     }
 
     requestAnimationFrame(loop);
   }
 
-  // ── Resize while open ──────────────────────────────────────────
+  // ── INPUT ──────────────────────────────────────────────────────
+  function onDown(e) {
+    keys[e.code] = true;
+    if (!active) { if (e.code === 'KeyG') { openGame(); } return; }
+    if (e.code === 'Escape') { closeGame(); return; }
+    if (e.code === 'KeyR' && phase === 'gameover') { startRound(); return; }
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  }
+  function onUp(e) { delete keys[e.code]; }
+  document.addEventListener('keydown', onDown);
+  document.addEventListener('keyup', onUp);
+  overlay.addEventListener('mousedown', e => { e.preventDefault(); if (active && phase === 'playing') playerFire(performance.now()); });
+
   window.addEventListener('resize', () => {
-    if (active) {
-      resize();
-      px = Math.min(px, W - SW / 2);
-      py = Math.min(py, H - SW / 2);
-      seedStars();
-    }
+    if (active) { resize(); px = Math.min(px, W - SW / 2); py = Math.min(py, H - SW / 2); seedStars(); }
   });
 })();
 </script>
