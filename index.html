@@ -645,19 +645,6 @@
     }
 
     /* ══════════════════════════════════════
-       NOISE GRAIN
-    ══════════════════════════════════════ */
-    #noise {
-      position: fixed; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 8998;
-      opacity: 0.032;
-      mix-blend-mode: screen;
-      image-rendering: pixelated;
-    }
-
-    /* ══════════════════════════════════════
        DATA TICKER
     ══════════════════════════════════════ */
     #ticker {
@@ -822,9 +809,6 @@
   </style>
 </head>
 <body>
-
-<!-- ── NOISE GRAIN ── -->
-<canvas id="noise"></canvas>
 
 <!-- ── STARFIELD ── -->
 <canvas id="starfield"></canvas>
@@ -1178,32 +1162,6 @@
     f = (f + 1) % 8;
     el.src = frames[f];
   }, 130); // ~8fps
-})();
-
-/* ══════════════════════════════════════
-   NOISE GRAIN CANVAS
-══════════════════════════════════════ */
-(function () {
-  const c = document.getElementById('noise');
-  const ctx = c.getContext('2d');
-  const W = 256, H = 192;
-  c.width = W; c.height = H;
-  const buf = ctx.createImageData(W, H);
-  let last = 0;
-  function tick(t) {
-    if (t - last > 66) { // ~15fps
-      const d = buf.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const v = Math.random() * 255 | 0;
-        d[i] = d[i+1] = d[i+2] = v;
-        d[i+3] = 255;
-      }
-      ctx.putImageData(buf, 0, 0);
-      last = t;
-    }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
 })();
 
 /* ══════════════════════════════════════
