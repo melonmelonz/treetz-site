@@ -832,15 +832,15 @@
       font-family: var(--font);
       font-size: 0.52rem;
       letter-spacing: 0.4em;
-      color: rgba(0,212,255,0.45);
+      color: rgba(0,212,255,0.7);
       text-transform: uppercase;
       pointer-events: none;
-      animation: hint-blink 5s step-end infinite;
+      animation: hint-pulse 3s ease-in-out infinite;
     }
 
-    @keyframes hint-blink {
-      0%,100% { opacity: 1; }
-      50%      { opacity: 0.2; }
+    @keyframes hint-pulse {
+      0%,100% { opacity: 0.8; text-shadow: 0 0 8px rgba(0,212,255,0.4); }
+      50%      { opacity: 0.3; text-shadow: none; }
     }
   </style>
 </head>
@@ -852,7 +852,7 @@
 <!-- ── DATA TICKER ── -->
 <div id="ticker">
   <div id="ticker-inner">
-    TREETZ.PAGES.DEV &nbsp;// SYS:ONLINE &nbsp;// SECTOR_07 &nbsp;// UNITS:99 &nbsp;// PWR:████░░░ &nbsp;// VER:0.1.0-UE5 &nbsp;// GRID:4B2A:FF09 &nbsp;// SIGNAL:STRONG &nbsp;// UPTIME:∞ &nbsp;// COORDS:24.5°N:119.8°E &nbsp;// FOUNDED:2018 &nbsp;// STATUS:IN_DEV &nbsp;// ENGINE:UNREAL_5 &nbsp;// TREETZ.PAGES.DEV &nbsp;// SYS:ONLINE &nbsp;// SECTOR_07 &nbsp;// UNITS:99 &nbsp;// PWR:████░░░ &nbsp;//
+    TREETZ.PAGES.DEV &nbsp;// SYS:ONLINE &nbsp;// SECTOR_07 &nbsp;// UNITS:99 &nbsp;// PWR:████░░░ &nbsp;// VER:0.1.0-UE5 &nbsp;// GRID:4B2A:FF09 &nbsp;// SIGNAL:STRONG &nbsp;// UPTIME:∞ &nbsp;// COORDS:24.5°N:119.8°E &nbsp;// FOUNDED:2018 &nbsp;// STATUS:IN_DEV &nbsp;// ENGINE:UNREAL_5 &nbsp;// ★ PRESS G TO PLAY ★ &nbsp;// TREETZ.PAGES.DEV &nbsp;// SYS:ONLINE &nbsp;// SECTOR_07 &nbsp;// UNITS:99 &nbsp;// PWR:████░░░ &nbsp;//
   </div>
 </div>
 
