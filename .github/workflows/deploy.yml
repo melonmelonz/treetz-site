@@ -1,30 +1,19 @@
-name: Deploy to Cloudflare Pages
+name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
+
+# Deployments are handled by Cloudflare Pages native GitHub integration.
+# CF Pages watches this repo and deploys automatically on push to main.
 
 jobs:
-  deploy:
-    name: Deploy
+  lint:
+    name: Validate HTML
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Deploy via Wrangler
-        run: npx wrangler@latest pages deploy . --project-name=treetz --branch=main
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - uses: actions/checkout@v4
+      - name: Check index.html exists
+        run: test -f index.html && echo "index.html OK"
