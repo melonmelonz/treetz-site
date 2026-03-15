@@ -1165,21 +1165,6 @@
 })();
 
 /* ══════════════════════════════════════
-   SCREEN FLICKER
-══════════════════════════════════════ */
-(function () {
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;inset:0;background:#000;pointer-events:none;z-index:9700;opacity:0;transition:opacity 0.04s;';
-  document.body.appendChild(el);
-  function flicker() {
-    el.style.opacity = (0.55 + Math.random() * 0.25).toFixed(2);
-    setTimeout(() => { el.style.opacity = '0'; }, 50 + Math.random() * 80);
-    setTimeout(flicker, 12000 + Math.random() * 28000);
-  }
-  setTimeout(flicker, 9000 + Math.random() * 9000);
-})();
-
-/* ══════════════════════════════════════
    VHS TRACKING LINES
 ══════════════════════════════════════ */
 (function () {
